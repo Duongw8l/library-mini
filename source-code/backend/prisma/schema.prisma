@@ -1,0 +1,129 @@
+// Prisma schema — Hệ thống Quản lý Thư viện Mini
+// Database: PostgreSQL
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" cho môi trường dev (Windows/macOS/Linux), thêm target musl cho Docker Alpine
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  LIBRARIAN
+  ADMIN
+}
+
+enum LoanStatus {
+  PENDING
+  BORROWED
+  OVERDUE
+  RETURNED
+  REJECTED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  fullName  String
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  loans Loan[]
+
+  @@map("users")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  books Book[]
+
+  @@map("categories")
+}
+
+model Author {
+  id        Int      @id @default(autoincrement())
+  name      String
+  bio       String?
+  createdAt DateTime @default(now())
+
+  books Book[]
+
+  @@map("authors")
+}
+
+model Book {
+  id              Int      @id @default(autoincrement())
+  title           String
+  isbn            String?  @unique
+  description     String?
+  publisher       String?
+  publishedYear   Int?
+  coverUrl        String?
+  totalCopies     Int      @default(1)
+  availableCopies Int      @default(1)
+  categoryId      Int?
+  authorId        Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  category Category? @relation(fields: [categoryId], references: [id])
+  author   Author?   @relation(fields: [authorId], references: [id])
+  loans    Loan[]
+
+  @@index([title])
+  @@index([categoryId])
+  @@map("books")
+}
+
+model Loan {
+  id           Int        @id @default(autoincrement())
+  bookId       Int
+  userId       Int
+  status       LoanStatus @default(PENDING)
+  requestedAt  DateTime   @default(now())
+  borrowedAt   DateTime?
+  dueDate      DateTime?
+  returnedAt   DateTime?
+  renewalCount Int        @default(0)
+  fineAmount   Int        @default(0)
+  rejectReason String?
+
+  book Book @relation(fields: [bookId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  renewals LoanRenewal[]
+
+  @@index([status])
+  @@index([userId])
+  @@map("loans")
+}
+
+model LoanRenewal {
+  id          Int      @id @default(autoincrement())
+  loanId      Int
+  oldDueDate  DateTime
+  newDueDate  DateTime
+  renewedAt   DateTime @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@map("loan_renewals")
+}
+
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}

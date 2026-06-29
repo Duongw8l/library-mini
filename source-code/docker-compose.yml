@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: library_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: library
+    ports:
+      - '5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: library_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: 'postgresql://postgres:postgres@db:5432/library?schema=public'
+      JWT_SECRET: 'doi-thanh-mot-chuoi-bi-mat-trong-production'
+      JWT_EXPIRES_IN: '24h'
+      PORT: '4000'
+      CLIENT_ORIGIN: 'http://localhost:5173'
+      NODE_ENV: 'production'
+    ports:
+      - '4000:4000'
+    # Tạo schema (db push) + seed rồi khởi động API.
+    # Dùng db push thay cho migrate deploy vì dự án không kèm thư mục migrations/.
+    command: sh -c "npx prisma db push --skip-generate && node prisma/seed.js && node src/server.js"
+
+  frontend:
+    build: ./frontend
+    container_name: library_frontend
+    depends_on:
+      - backend
+    ports:
+      - '5173:80'
+
+volumes:
+  db_data:

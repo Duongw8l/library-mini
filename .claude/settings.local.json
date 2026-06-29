@@ -33,7 +33,19 @@
       "Bash(node --check prisma/seed.js)",
       "Bash(node --check src/modules/reports/reports.routes.js)",
       "Bash(node --check src/modules/users/users.routes.js)",
-      "Bash(curl -s -o /dev/null -w \"frontend HTTP %{http_code}\\\\n\" http://localhost:5173)"
+      "Bash(curl -s -o /dev/null -w \"frontend HTTP %{http_code}\\\\n\" http://localhost:5173)",
+      "Bash(docker build *)",
+      "Bash(echo \"---build exit:$?---\")",
+      "Bash(docker inspect *)",
+      "Bash(docker restart *)",
+      "Bash(curl -s http://localhost:8088/)",
+      "Bash(curl -s http://localhost:8088/api/health)",
+      "Bash(curl -s \"http://localhost:8088/api/books?limit=1\")",
+      "Bash(docker rm *)",
+      "Bash(docker rmi *)",
+      "Bash(railway --version)",
+      "Bash(node -e \"console.log\\('node ok'\\)\")",
+      "Bash(git add *)"
     ]
   }
 }
