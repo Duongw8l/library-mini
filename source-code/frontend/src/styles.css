@@ -211,13 +211,21 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .dash-row { grid-template-columns: 1fr; }
 }
-/* Nút hamburger & nút đóng drawer — ẩn trên desktop */
+/* Nút hamburger (☰) luôn hiện; nút đóng (✕) chỉ hiện ở drawer mobile */
 .lb-burger, .lb-close {
-  display: none; background: none; border: none; cursor: pointer;
+  background: none; border: none; cursor: pointer;
   color: var(--navy); padding: 6px; border-radius: 8px;
 }
+.lb-burger { display: inline-flex; align-items: center; }
+.lb-close { display: none; }
 .lb-burger:hover { background: #f4efe8; }
 .backdrop { position: fixed; inset: 0; background: rgba(31,58,90,.45); z-index: 40; }
+
+/* Desktop: ☰ thu gọn / mở sidebar (đẩy nội dung, không che) */
+@media (min-width: 861px) {
+  .backdrop { display: none; }
+  .layout.nav-closed .sidebar { display: none; }
+}
 
 @media (max-width: 860px) {
   /* Sidebar thành drawer trượt từ trái */

@@ -42,7 +42,10 @@ export default function DashboardLayout() {
   const location = useLocation();
   const [q, setQ] = useState('');
   const [alerts, setAlerts] = useState(0);
-  const [navOpen, setNavOpen] = useState(false); // drawer mobile
+  // Mặc định: desktop mở sẵn sidebar, mobile đóng (mở bằng nút ☰).
+  const [navOpen, setNavOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth > 860 : true
+  );
 
   const isManage = user?.role === 'LIBRARIAN' || user?.role === 'ADMIN';
   const items = (isManage ? MENU.manage : MENU.student).filter(
@@ -54,8 +57,10 @@ export default function DashboardLayout() {
     if (isManage) loansApi.overdue().then((d) => setAlerts(d.length)).catch(() => {});
   }, [isManage]);
 
-  // Đóng drawer mỗi khi chuyển trang.
-  useEffect(() => { setNavOpen(false); }, [location.pathname]);
+  // Đóng drawer khi chuyển trang — chỉ trên mobile (desktop giữ sidebar mở).
+  useEffect(() => {
+    if (window.innerWidth <= 860) setNavOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -68,8 +73,8 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="layout">
-      {/* Lớp phủ khi mở drawer trên mobile */}
+    <div className={`layout ${navOpen ? 'nav-open' : 'nav-closed'}`}>
+      {/* Lớp phủ khi mở drawer trên mobile (ẩn trên desktop) */}
       {navOpen && <div className="backdrop" onClick={() => setNavOpen(false)} />}
 
       <aside className={`sidebar ${navOpen ? 'open' : ''}`}>
@@ -90,7 +95,7 @@ export default function DashboardLayout() {
 
       <div className="main">
         <header className="topbar">
-          <button className="lb-burger" onClick={() => setNavOpen(true)} aria-label="Mở menu"><IconMenu /></button>
+          <button className="lb-burger" onClick={() => setNavOpen((o) => !o)} aria-label="Bật/tắt menu"><IconMenu /></button>
           <form className="search" onSubmit={onSearch}>
             <IconSearch width={18} height={18} />
             <input placeholder="Tìm Sách / Độc giả..." value={q} onChange={(e) => setQ(e.target.value)} />
