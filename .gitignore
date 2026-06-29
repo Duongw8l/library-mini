@@ -3,3 +3,6 @@ dist/
 .env
 *.log
 source-code/backend/public/
+
+# Cấu hình cục bộ của Claude Code (không đưa lên repo)
+.claude/settings.local.json
