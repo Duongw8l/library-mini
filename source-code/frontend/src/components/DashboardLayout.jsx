@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useNavigate, Outlet } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loansApi } from '../api/services';
 import {
-  Logo, IconHome, IconBook, IconUsers, IconSwap, IconChart, IconGear, IconSearch, IconBell,
+  Logo, IconHome, IconBook, IconUsers, IconSwap, IconChart, IconGear, IconSearch, IconBell, IconMenu, IconClose,
 } from './Icons';
 
 const ROLE_LABEL = { STUDENT: 'Sinh viên', LIBRARIAN: 'Thủ thư', ADMIN: 'Quản trị viên' };
@@ -39,8 +39,10 @@ function Clock() {
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [q, setQ] = useState('');
   const [alerts, setAlerts] = useState(0);
+  const [navOpen, setNavOpen] = useState(false); // drawer mobile
 
   const isManage = user?.role === 'LIBRARIAN' || user?.role === 'ADMIN';
   const items = (isManage ? MENU.manage : MENU.student).filter(
@@ -51,6 +53,9 @@ export default function DashboardLayout() {
   useEffect(() => {
     if (isManage) loansApi.overdue().then((d) => setAlerts(d.length)).catch(() => {});
   }, [isManage]);
+
+  // Đóng drawer mỗi khi chuyển trang.
+  useEffect(() => { setNavOpen(false); }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -64,10 +69,14 @@ export default function DashboardLayout() {
 
   return (
     <div className="layout">
-      <aside className="sidebar">
+      {/* Lớp phủ khi mở drawer trên mobile */}
+      {navOpen && <div className="backdrop" onClick={() => setNavOpen(false)} />}
+
+      <aside className={`sidebar ${navOpen ? 'open' : ''}`}>
         <div className="logo">
           <Logo />
           <span>MiniLib</span>
+          <button className="lb-close" onClick={() => setNavOpen(false)} aria-label="Đóng menu"><IconClose /></button>
         </div>
         <nav className="menu">
           {items.map((m) => (
@@ -81,6 +90,7 @@ export default function DashboardLayout() {
 
       <div className="main">
         <header className="topbar">
+          <button className="lb-burger" onClick={() => setNavOpen(true)} aria-label="Mở menu"><IconMenu /></button>
           <form className="search" onSubmit={onSearch}>
             <IconSearch width={18} height={18} />
             <input placeholder="Tìm Sách / Độc giả..." value={q} onChange={(e) => setQ(e.target.value)} />
