@@ -2,128 +2,139 @@
 // Database: PostgreSQL
 
 generator client {
-  provider      = "prisma-client-js"
+  provider      = "prisma-client-js" // Loại client: JavaScript/Node
   // "native" cho môi trường dev (Windows/macOS/Linux), thêm target musl cho Docker Alpine
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"] // Build engine cho cả máy dev và container Alpine
 }
+// Kết thúc generator
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql" // Hệ quản trị CSDL: PostgreSQL
+  url      = env("DATABASE_URL") // Chuỗi kết nối lấy từ biến môi trường DATABASE_URL
 }
+// Kết thúc datasource
 
 enum Role {
-  STUDENT
-  LIBRARIAN
-  ADMIN
+  STUDENT // Sinh viên (độc giả)
+  LIBRARIAN // Thủ thư
+  ADMIN // Quản trị viên
 }
+// Kết thúc enum Role
 
 enum LoanStatus {
-  PENDING
-  BORROWED
-  OVERDUE
-  RETURNED
-  REJECTED
+  PENDING // Chờ duyệt
+  BORROWED // Đang mượn
+  OVERDUE // Quá hạn
+  RETURNED // Đã trả
+  REJECTED // Bị từ chối
 }
+// Kết thúc enum LoanStatus
 
 model User {
-  id        Int      @id @default(autoincrement())
-  fullName  String
-  email     String   @unique
-  password  String
-  role      Role     @default(STUDENT)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int      @id @default(autoincrement()) // Khóa chính, tự tăng
+  fullName  String // Họ tên
+  email     String   @unique // Email, không trùng
+  password  String // Mật khẩu đã băm
+  role      Role     @default(STUDENT) // Vai trò, mặc định sinh viên
+  active    Boolean  @default(true) // Còn hoạt động (true) hay bị khóa (false)
+  createdAt DateTime @default(now()) // Thời điểm tạo
+  updatedAt DateTime @updatedAt // Tự cập nhật mỗi khi sửa bản ghi
 
-  loans Loan[]
+  loans Loan[] // Quan hệ 1-nhiều: một user có nhiều phiếu mượn
 
-  @@map("users")
+  @@map("users") // Tên bảng thật trong DB là "users"
 }
+// Kết thúc model User
 
 model Category {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
+  id        Int      @id @default(autoincrement()) // Khóa chính tự tăng
+  name      String   @unique // Tên thể loại, không trùng
+  createdAt DateTime @default(now()) // Thời điểm tạo
 
-  books Book[]
+  books Book[] // Một thể loại có nhiều sách
 
-  @@map("categories")
+  @@map("categories") // Tên bảng thật: "categories"
 }
+// Kết thúc model Category
 
 model Author {
-  id        Int      @id @default(autoincrement())
-  name      String
-  bio       String?
-  createdAt DateTime @default(now())
+  id        Int      @id @default(autoincrement()) // Khóa chính tự tăng
+  name      String // Tên tác giả
+  bio       String? // Tiểu sử (có thể null)
+  createdAt DateTime @default(now()) // Thời điểm tạo
 
-  books Book[]
+  books Book[] // Một tác giả có nhiều sách
 
-  @@map("authors")
+  @@map("authors") // Tên bảng thật: "authors"
 }
+// Kết thúc model Author
 
 model Book {
-  id              Int      @id @default(autoincrement())
-  title           String
-  isbn            String?  @unique
-  description     String?
-  publisher       String?
-  publishedYear   Int?
-  coverUrl        String?
-  totalCopies     Int      @default(1)
-  availableCopies Int      @default(1)
-  categoryId      Int?
-  authorId        Int?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id              Int      @id @default(autoincrement()) // Khóa chính tự tăng
+  title           String // Tiêu đề
+  isbn            String?  @unique // Mã ISBN, không trùng (có thể null)
+  description     String? // Mô tả
+  publisher       String? // Nhà xuất bản
+  publishedYear   Int? // Năm xuất bản
+  coverUrl        String? // Đường dẫn ảnh bìa
+  totalCopies     Int      @default(1) // Tổng số bản
+  availableCopies Int      @default(1) // Số bản còn cho mượn
+  categoryId      Int? // Khóa ngoại tới thể loại (có thể null)
+  authorId        Int? // Khóa ngoại tới tác giả (có thể null)
+  createdAt       DateTime @default(now()) // Thời điểm tạo
+  updatedAt       DateTime @updatedAt // Tự cập nhật khi sửa
 
-  category Category? @relation(fields: [categoryId], references: [id])
-  author   Author?   @relation(fields: [authorId], references: [id])
-  loans    Loan[]
+  category Category? @relation(fields: [categoryId], references: [id]) // Liên kết tới Category qua categoryId
+  author   Author?   @relation(fields: [authorId], references: [id]) // Liên kết tới Author qua authorId
+  loans    Loan[] // Một sách có nhiều phiếu mượn
 
-  @@index([title])
-  @@index([categoryId])
-  @@map("books")
+  @@index([title]) // Đánh chỉ mục theo tiêu đề (tăng tốc tìm kiếm)
+  @@index([categoryId]) // Đánh chỉ mục theo thể loại
+  @@map("books") // Tên bảng thật: "books"
 }
+// Kết thúc model Book
 
 model Loan {
-  id           Int        @id @default(autoincrement())
-  bookId       Int
-  userId       Int
-  status       LoanStatus @default(PENDING)
-  requestedAt  DateTime   @default(now())
-  borrowedAt   DateTime?
-  dueDate      DateTime?
-  returnedAt   DateTime?
-  renewalCount Int        @default(0)
-  fineAmount   Int        @default(0)
-  rejectReason String?
+  id           Int        @id @default(autoincrement()) // Khóa chính tự tăng
+  bookId       Int // Khóa ngoại tới sách
+  userId       Int // Khóa ngoại tới người mượn
+  status       LoanStatus @default(PENDING) // Trạng thái phiếu, mặc định chờ duyệt
+  requestedAt  DateTime   @default(now()) // Thời điểm gửi yêu cầu
+  borrowedAt   DateTime? // Thời điểm bắt đầu mượn (sau khi duyệt)
+  dueDate      DateTime? // Hạn phải trả
+  returnedAt   DateTime? // Thời điểm đã trả
+  renewalCount Int        @default(0) // Số lần đã gia hạn
+  fineAmount   Int        @default(0) // Tiền phạt (nếu trả trễ)
+  rejectReason String? // Lý do bị từ chối
 
-  book Book @relation(fields: [bookId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  book Book @relation(fields: [bookId], references: [id]) // Liên kết tới sách qua bookId
+  user User @relation(fields: [userId], references: [id]) // Liên kết tới người mượn qua userId
 
-  renewals LoanRenewal[]
+  renewals LoanRenewal[] // Một phiếu có nhiều lần gia hạn
 
-  @@index([status])
-  @@index([userId])
-  @@map("loans")
+  @@index([status]) // Chỉ mục theo trạng thái (lọc nhanh)
+  @@index([userId]) // Chỉ mục theo người mượn
+  @@map("loans") // Tên bảng thật: "loans"
 }
+// Kết thúc model Loan
 
 model LoanRenewal {
-  id          Int      @id @default(autoincrement())
-  loanId      Int
-  oldDueDate  DateTime
-  newDueDate  DateTime
-  renewedAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement()) // Khóa chính tự tăng
+  loanId     Int // Khóa ngoại tới phiếu mượn
+  oldDueDate DateTime // Hạn trả cũ (trước khi gia hạn)
+  newDueDate DateTime // Hạn trả mới (sau khi gia hạn)
+  renewedAt  DateTime @default(now()) // Thời điểm gia hạn
 
-  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade) // Liên kết tới phiếu; xóa phiếu thì xóa luôn lịch sử (Cascade)
 
-  @@map("loan_renewals")
+  @@map("loan_renewals") // Tên bảng thật: "loan_renewals"
 }
+// Kết thúc model LoanRenewal
 
 model Setting {
-  key   String @id
-  value String
+  key   String @id // Khóa cấu hình (vd max_books) làm khóa chính
+  value String // Giá trị (lưu dạng chuỗi)
 
-  @@map("settings")
+  @@map("settings") // Tên bảng thật: "settings"
 }
+// Kết thúc model Setting

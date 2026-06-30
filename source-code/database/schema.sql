@@ -5,83 +5,83 @@
 -- =============================================================
 
 -- Kiểu liệt kê (enum)
-CREATE TYPE role AS ENUM ('STUDENT', 'LIBRARIAN', 'ADMIN');
-CREATE TYPE loan_status AS ENUM ('PENDING', 'BORROWED', 'OVERDUE', 'RETURNED', 'REJECTED');
+CREATE TYPE role AS ENUM ('STUDENT', 'LIBRARIAN', 'ADMIN'); -- Định nghĩa kiểu vai trò người dùng
+CREATE TYPE loan_status AS ENUM ('PENDING', 'BORROWED', 'OVERDUE', 'RETURNED', 'REJECTED'); -- Định nghĩa kiểu trạng thái phiếu mượn
 
 -- Người dùng
-CREATE TABLE users (
-    id          SERIAL PRIMARY KEY,
-    full_name   VARCHAR(255) NOT NULL,
-    email       VARCHAR(255) NOT NULL UNIQUE,
-    password    VARCHAR(255) NOT NULL,
-    role        role NOT NULL DEFAULT 'STUDENT',
-    active      BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
-);
+CREATE TABLE users ( -- Tạo bảng người dùng
+    id          SERIAL PRIMARY KEY, -- Khóa chính, tự tăng
+    full_name   VARCHAR(255) NOT NULL, -- Họ tên (bắt buộc)
+    email       VARCHAR(255) NOT NULL UNIQUE, -- Email, bắt buộc và không trùng
+    password    VARCHAR(255) NOT NULL, -- Mật khẩu đã băm
+    role        role NOT NULL DEFAULT 'STUDENT', -- Vai trò, mặc định sinh viên
+    active      BOOLEAN NOT NULL DEFAULT TRUE, -- Còn hoạt động hay bị khóa
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(), -- Thời điểm tạo
+    updated_at  TIMESTAMP NOT NULL DEFAULT NOW() -- Thời điểm cập nhật
+); -- Kết thúc bảng users
 
 -- Thể loại
-CREATE TABLE categories (
-    id          SERIAL PRIMARY KEY,
-    name        VARCHAR(255) NOT NULL UNIQUE,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW()
-);
+CREATE TABLE categories ( -- Tạo bảng thể loại
+    id          SERIAL PRIMARY KEY, -- Khóa chính tự tăng
+    name        VARCHAR(255) NOT NULL UNIQUE, -- Tên thể loại, không trùng
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW() -- Thời điểm tạo
+); -- Kết thúc bảng categories
 
 -- Tác giả
-CREATE TABLE authors (
-    id          SERIAL PRIMARY KEY,
-    name        VARCHAR(255) NOT NULL,
-    bio         TEXT,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW()
-);
+CREATE TABLE authors ( -- Tạo bảng tác giả
+    id          SERIAL PRIMARY KEY, -- Khóa chính tự tăng
+    name        VARCHAR(255) NOT NULL, -- Tên tác giả
+    bio         TEXT, -- Tiểu sử (có thể null)
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW() -- Thời điểm tạo
+); -- Kết thúc bảng authors
 
 -- Sách (đầu sách)
-CREATE TABLE books (
-    id                SERIAL PRIMARY KEY,
-    title             VARCHAR(500) NOT NULL,
-    isbn              VARCHAR(50) UNIQUE,
-    description       TEXT,
-    publisher         VARCHAR(255),
-    published_year    INT,
-    cover_url         VARCHAR(500),
-    total_copies      INT NOT NULL DEFAULT 1,
-    available_copies  INT NOT NULL DEFAULT 1,
-    category_id       INT REFERENCES categories(id),
-    author_id         INT REFERENCES authors(id),
-    created_at        TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at        TIMESTAMP NOT NULL DEFAULT NOW()
-);
-CREATE INDEX idx_books_title ON books(title);
-CREATE INDEX idx_books_category ON books(category_id);
+CREATE TABLE books ( -- Tạo bảng sách
+    id                SERIAL PRIMARY KEY, -- Khóa chính tự tăng
+    title             VARCHAR(500) NOT NULL, -- Tiêu đề (bắt buộc)
+    isbn              VARCHAR(50) UNIQUE, -- Mã ISBN, không trùng
+    description       TEXT, -- Mô tả
+    publisher         VARCHAR(255), -- Nhà xuất bản
+    published_year    INT, -- Năm xuất bản
+    cover_url         VARCHAR(500), -- Đường dẫn ảnh bìa
+    total_copies      INT NOT NULL DEFAULT 1, -- Tổng số bản
+    available_copies  INT NOT NULL DEFAULT 1, -- Số bản còn cho mượn
+    category_id       INT REFERENCES categories(id), -- Khóa ngoại tới thể loại
+    author_id         INT REFERENCES authors(id), -- Khóa ngoại tới tác giả
+    created_at        TIMESTAMP NOT NULL DEFAULT NOW(), -- Thời điểm tạo
+    updated_at        TIMESTAMP NOT NULL DEFAULT NOW() -- Thời điểm cập nhật
+); -- Kết thúc bảng books
+CREATE INDEX idx_books_title ON books(title); -- Chỉ mục theo tiêu đề (tăng tốc tìm kiếm)
+CREATE INDEX idx_books_category ON books(category_id); -- Chỉ mục theo thể loại
 
 -- Phiếu mượn
-CREATE TABLE loans (
-    id             SERIAL PRIMARY KEY,
-    book_id        INT NOT NULL REFERENCES books(id),
-    user_id        INT NOT NULL REFERENCES users(id),
-    status         loan_status NOT NULL DEFAULT 'PENDING',
-    requested_at   TIMESTAMP NOT NULL DEFAULT NOW(),
-    borrowed_at    TIMESTAMP,
-    due_date       TIMESTAMP,
-    returned_at    TIMESTAMP,
-    renewal_count  INT NOT NULL DEFAULT 0,
-    fine_amount    INT NOT NULL DEFAULT 0,
-    reject_reason  VARCHAR(500)
-);
-CREATE INDEX idx_loans_status ON loans(status);
-CREATE INDEX idx_loans_user ON loans(user_id);
+CREATE TABLE loans ( -- Tạo bảng phiếu mượn
+    id             SERIAL PRIMARY KEY, -- Khóa chính tự tăng
+    book_id        INT NOT NULL REFERENCES books(id), -- Khóa ngoại tới sách
+    user_id        INT NOT NULL REFERENCES users(id), -- Khóa ngoại tới người mượn
+    status         loan_status NOT NULL DEFAULT 'PENDING', -- Trạng thái, mặc định chờ duyệt
+    requested_at   TIMESTAMP NOT NULL DEFAULT NOW(), -- Thời điểm gửi yêu cầu
+    borrowed_at    TIMESTAMP, -- Thời điểm bắt đầu mượn
+    due_date       TIMESTAMP, -- Hạn phải trả
+    returned_at    TIMESTAMP, -- Thời điểm đã trả
+    renewal_count  INT NOT NULL DEFAULT 0, -- Số lần đã gia hạn
+    fine_amount    INT NOT NULL DEFAULT 0, -- Tiền phạt
+    reject_reason  VARCHAR(500) -- Lý do bị từ chối
+); -- Kết thúc bảng loans
+CREATE INDEX idx_loans_status ON loans(status); -- Chỉ mục theo trạng thái
+CREATE INDEX idx_loans_user ON loans(user_id); -- Chỉ mục theo người mượn
 
 -- Lịch sử gia hạn
-CREATE TABLE loan_renewals (
-    id            SERIAL PRIMARY KEY,
-    loan_id       INT NOT NULL REFERENCES loans(id) ON DELETE CASCADE,
-    old_due_date  TIMESTAMP NOT NULL,
-    new_due_date  TIMESTAMP NOT NULL,
-    renewed_at    TIMESTAMP NOT NULL DEFAULT NOW()
-);
+CREATE TABLE loan_renewals ( -- Tạo bảng lịch sử gia hạn
+    id            SERIAL PRIMARY KEY, -- Khóa chính tự tăng
+    loan_id       INT NOT NULL REFERENCES loans(id) ON DELETE CASCADE, -- Khóa ngoại tới phiếu; xóa phiếu thì xóa luôn lịch sử
+    old_due_date  TIMESTAMP NOT NULL, -- Hạn trả cũ
+    new_due_date  TIMESTAMP NOT NULL, -- Hạn trả mới
+    renewed_at    TIMESTAMP NOT NULL DEFAULT NOW() -- Thời điểm gia hạn
+); -- Kết thúc bảng loan_renewals
 
 -- Cấu hình hệ thống (key/value)
-CREATE TABLE settings (
-    key    VARCHAR(100) PRIMARY KEY,
-    value  VARCHAR(255) NOT NULL
-);
+CREATE TABLE settings ( -- Tạo bảng cấu hình dạng khóa-giá trị
+    key    VARCHAR(100) PRIMARY KEY, -- Khóa cấu hình làm khóa chính
+    value  VARCHAR(255) NOT NULL -- Giá trị (dạng chuỗi)
+); -- Kết thúc bảng settings

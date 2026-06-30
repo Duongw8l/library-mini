@@ -6,32 +6,50 @@
 
 # ---------- Stage 1: build frontend ----------
 FROM node:20-alpine AS frontend
+# ^ Giai đoạn 1: dùng Node 20 Alpine để build frontend, đặt tên stage "frontend"
 WORKDIR /fe
+# ^ Thư mục làm việc /fe
 COPY frontend/package*.json ./
+# ^ Copy package.json của frontend trước (tận dụng cache)
 RUN npm install
+# ^ Cài dependencies frontend
 COPY frontend/ ./
+# ^ Copy toàn bộ mã nguồn frontend
 RUN npm run build
+# ^ Build ra thư mục dist/
 
 # ---------- Stage 2: backend runtime ----------
 FROM node:20-alpine
+# ^ Giai đoạn 2: ảnh chạy thật cho backend
 # Prisma cần OpenSSL trên Alpine
 RUN apk add --no-cache openssl libc6-compat
+# ^ Cài thư viện hệ thống cho Prisma
 WORKDIR /app
+# ^ Thư mục làm việc /app
 
 COPY backend/package*.json ./
+# ^ Copy package.json backend trước (cache)
 RUN npm install --omit=dev
+# ^ Cài dependencies production của backend (bỏ devDependencies)
 # Prisma CLI (devDep bị loại ở trên) — cần cho generate + db push lúc chạy
 RUN npm install --no-save prisma@5.18.0
+# ^ Cài thêm Prisma CLI (không ghi vào package.json) để chạy generate/db push
 
 COPY backend/ ./
+# ^ Copy mã nguồn backend
 RUN npx prisma generate
+# ^ Sinh Prisma Client
 
 # Đưa bản build frontend vào ./public để Express phục vụ
 COPY --from=frontend /fe/dist ./public
+# ^ Lấy bản build frontend từ stage 1, đặt vào ./public (app.js sẽ phục vụ tĩnh từ đây)
 
 # Railway sẽ cấp biến PORT; server.js đã đọc process.env.PORT
 ENV NODE_ENV=production
+# ^ Đặt chế độ production
 EXPOSE 4000
+# ^ Khai báo cổng (Railway thực tế dùng biến PORT)
 
 # Đồng bộ schema + seed dữ liệu mẫu (idempotent) rồi khởi động API
 CMD ["sh", "-c", "npx prisma db push --skip-generate && node prisma/seed.js && node src/server.js"]
+# ^ Khi chạy: đồng bộ schema -> nạp dữ liệu mẫu -> khởi động server

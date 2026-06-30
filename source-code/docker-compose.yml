@@ -1,47 +1,47 @@
-services:
-  db:
-    image: postgres:15-alpine
-    container_name: library_db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: library
-    ports:
-      - '5432:5432'
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 5s
-      timeout: 5s
-      retries: 10
+services: # Khai báo các dịch vụ (container) của hệ thống
+  db: # Dịch vụ cơ sở dữ liệu
+    image: postgres:15-alpine # Dùng ảnh PostgreSQL 15 bản Alpine
+    container_name: library_db # Tên container cố định
+    environment: # Biến môi trường khởi tạo Postgres
+      POSTGRES_USER: postgres # Tên người dùng DB
+      POSTGRES_PASSWORD: postgres # Mật khẩu DB
+      POSTGRES_DB: library # Tên database tạo sẵn
+    ports: # Ánh xạ cổng máy thật : cổng container
+      - '5432:5432' # Mở cổng 5432 ra ngoài để kết nối từ máy host
+    volumes: # Gắn ổ lưu trữ
+      - db_data:/var/lib/postgresql/data # Lưu dữ liệu DB vào volume (không mất khi restart)
+    healthcheck: # Kiểm tra DB đã sẵn sàng chưa
+      test: ['CMD-SHELL', 'pg_isready -U postgres'] # Lệnh kiểm tra Postgres sẵn sàng
+      interval: 5s # Kiểm tra mỗi 5 giây
+      timeout: 5s # Mỗi lần chờ tối đa 5 giây
+      retries: 10 # Thử tối đa 10 lần
 
-  backend:
-    build: ./backend
-    container_name: library_backend
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: 'postgresql://postgres:postgres@db:5432/library?schema=public'
-      JWT_SECRET: 'doi-thanh-mot-chuoi-bi-mat-trong-production'
-      JWT_EXPIRES_IN: '24h'
-      PORT: '4000'
-      CLIENT_ORIGIN: 'http://localhost:5173'
-      NODE_ENV: 'production'
-    ports:
-      - '4000:4000'
+  backend: # Dịch vụ API backend
+    build: ./backend # Build từ Dockerfile trong thư mục ./backend
+    container_name: library_backend # Tên container
+    depends_on: # Phụ thuộc dịch vụ khác
+      db: # Cần DB
+        condition: service_healthy # Chỉ khởi động sau khi DB báo "khỏe" (qua healthcheck)
+    environment: # Biến môi trường cho backend
+      DATABASE_URL: 'postgresql://postgres:postgres@db:5432/library?schema=public' # Kết nối tới service "db"
+      JWT_SECRET: 'doi-thanh-mot-chuoi-bi-mat-trong-production' # Khóa ký JWT (nên đổi ở production)
+      JWT_EXPIRES_IN: '24h' # Thời hạn token
+      PORT: '4000' # Cổng backend
+      CLIENT_ORIGIN: 'http://localhost:5173' # Origin frontend cho CORS
+      NODE_ENV: 'production' # Chạy ở chế độ production
+    ports: # Ánh xạ cổng
+      - '4000:4000' # Mở cổng 4000 ra host
     # Tạo schema (db push) + seed rồi khởi động API.
     # Dùng db push thay cho migrate deploy vì dự án không kèm thư mục migrations/.
-    command: sh -c "npx prisma db push --skip-generate && node prisma/seed.js && node src/server.js"
+    command: sh -c "npx prisma db push --skip-generate && node prisma/seed.js && node src/server.js" # Đồng bộ schema -> nạp dữ liệu mẫu -> chạy server
 
-  frontend:
-    build: ./frontend
-    container_name: library_frontend
-    depends_on:
-      - backend
-    ports:
-      - '5173:80'
+  frontend: # Dịch vụ giao diện frontend
+    build: ./frontend # Build từ Dockerfile trong ./frontend (Nginx phục vụ bản build)
+    container_name: library_frontend # Tên container
+    depends_on: # Phụ thuộc
+      - backend # Khởi động sau backend
+    ports: # Ánh xạ cổng
+      - '5173:80' # Cổng 5173 trên host -> cổng 80 (Nginx) trong container
 
-volumes:
-  db_data:
+volumes: # Khai báo các volume dùng chung
+  db_data: # Volume lưu dữ liệu Postgres (giữ dữ liệu qua các lần chạy)

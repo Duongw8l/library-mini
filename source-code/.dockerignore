@@ -1,6 +1,12 @@
 **/node_modules
+# ^ Bỏ qua thư mục node_modules (sẽ cài lại trong image, không copy từ host)
 **/dist
+# ^ Bỏ qua thư mục build dist (build lại trong image)
 **/.env
+# ^ Bỏ qua file .env (chứa bí mật, không đưa vào image)
 **/*.log
+# ^ Bỏ qua mọi file log
 backend/public
+# ^ Bỏ qua public của backend (được tạo lúc build từ bản frontend)
 .git
+# ^ Bỏ qua thư mục .git (lịch sử Git không cần trong image)
