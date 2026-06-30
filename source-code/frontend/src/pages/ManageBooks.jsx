@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'; // Hook side-effect và state
 import { booksApi, categoriesApi, authorsApi } from '../api/services'; // API sách, thể loại, tác giả
 
-const EMPTY = { title: '', isbn: '', categoryId: '', authorId: '', publisher: '', publishedYear: '', totalCopies: 1, description: '' }; // Giá trị form rỗng (dùng khi thêm mới hoặc reset)
+const EMPTY = { title: '', isbn: '', categoryId: '', authorName: '', publisher: '', publishedYear: '', totalCopies: 1, description: '' }; // Giá trị form rỗng (authorName: nhập tên tác giả dạng text)
 
 export default function ManageBooks() { // Trang quản lý đầu sách (thêm/sửa/xóa)
   const [books, setBooks] = useState([]); // State danh sách sách
@@ -24,14 +24,26 @@ export default function ManageBooks() { // Trang quản lý đầu sách (thêm/
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value }); // Cập nhật đúng trường form theo name của ô nhập
 
+  // Tìm hoặc tạo tác giả theo tên gõ vào, trả về authorId (null nếu để trống)
+  const resolveAuthorId = async (name) => { // Xử lý ô nhập tên tác giả
+    const trimmed = (name || '').trim(); // Bỏ khoảng trắng thừa
+    if (!trimmed) return null; // Để trống -> không gắn tác giả
+    const existing = authors.find((a) => a.name.toLowerCase() === trimmed.toLowerCase()); // Tìm tác giả đã có (không phân biệt hoa/thường)
+    if (existing) return existing.id; // Đã có -> dùng lại id
+    const created = await authorsApi.create(trimmed); // Chưa có -> tạo tác giả mới
+    setAuthors((prev) => [...prev, created]); // Thêm vào danh sách gợi ý cho lần sau
+    return created.id; // Trả id tác giả vừa tạo
+  }; // Kết thúc resolveAuthorId
+
   const submit = async (e) => { // Hàm xử lý gửi form (thêm hoặc sửa)
     e.preventDefault(); // Ngăn reload trang
     setErr(''); setMsg(''); // Xóa thông báo cũ
     try { // Thử lưu
+      const authorId = await resolveAuthorId(form.authorName); // Quy đổi tên tác giả -> id (tự tạo nếu chưa có)
       const payload = { // Chuẩn hóa dữ liệu trước khi gửi
         ...form, // Sao chép các trường form
         categoryId: form.categoryId ? Number(form.categoryId) : null, // Ép thể loại sang số (rỗng -> null)
-        authorId: form.authorId ? Number(form.authorId) : null, // Ép tác giả sang số
+        authorId, // Gắn id tác giả vừa quy đổi (backend bỏ qua trường authorName thừa)
         publishedYear: form.publishedYear ? Number(form.publishedYear) : null, // Ép năm sang số
         totalCopies: Number(form.totalCopies), // Ép số bản sang số
       }; // Kết thúc payload
@@ -52,7 +64,7 @@ export default function ManageBooks() { // Trang quản lý đầu sách (thêm/
   const edit = (b) => { // Hàm chuyển form sang chế độ sửa một sách
     setEditingId(b.id); // Ghi nhớ id đang sửa
     setForm({ // Đổ dữ liệu sách vào form
-      title: b.title, isbn: b.isbn || '', categoryId: b.category?.id || '', authorId: b.author?.id || '', // Tiêu đề, ISBN, thể loại, tác giả
+      title: b.title, isbn: b.isbn || '', categoryId: b.category?.id || '', authorName: b.author?.name || '', // Tiêu đề, ISBN, thể loại, tên tác giả
       publisher: b.publisher || '', publishedYear: b.publishedYear || '', totalCopies: b.totalCopies, description: b.description || '', // NXB, năm, số bản, mô tả
     }); // Kết thúc setForm
   }; // Kết thúc edit
@@ -84,10 +96,10 @@ export default function ManageBooks() { // Trang quản lý đầu sách (thêm/
           <option value="">-- Thể loại --</option> {/* Lựa chọn trống */}
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)} {/* Liệt kê thể loại */}
         </select> {/* Kết thúc dropdown thể loại */}
-        <select name="authorId" value={form.authorId} onChange={onChange}> {/* Dropdown tác giả */}
-          <option value="">-- Tác giả --</option> {/* Lựa chọn trống */}
-          {authors.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)} {/* Liệt kê tác giả */}
-        </select> {/* Kết thúc dropdown tác giả */}
+        <input name="authorName" placeholder="Tác giả" value={form.authorName} onChange={onChange} list="author-options" /> {/* Ô nhập tên tác giả (gõ tự do, có gợi ý) */}
+        <datalist id="author-options"> {/* Danh sách gợi ý tác giả đã có (vẫn cho phép nhập tên mới) */}
+          {authors.map((a) => <option key={a.id} value={a.name} />)} {/* Mỗi tác giả là một gợi ý */}
+        </datalist> {/* Kết thúc danh sách gợi ý */}
         <input name="publisher" placeholder="NXB" value={form.publisher} onChange={onChange} /> {/* Ô nhà xuất bản */}
         <input name="publishedYear" placeholder="Năm XB" type="number" value={form.publishedYear} onChange={onChange} /> {/* Ô năm xuất bản */}
         <input name="totalCopies" placeholder="Số bản" type="number" min="1" value={form.totalCopies} onChange={onChange} /> {/* Ô số bản (≥1) */}
