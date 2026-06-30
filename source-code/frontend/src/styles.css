@@ -393,6 +393,8 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
 :root[data-theme='dark'] .lb-activity p { color: var(--text); }
 
 :root[data-theme='dark'] .menu-item { color: var(--muted); }
+/* Mục menu đang chọn: giữ chữ trắng để nổi rõ trên nền cam (ghi đè rule mờ ở trên) */
+:root[data-theme='dark'] .menu-item.active { color: #fff; }
 :root[data-theme='dark'] .lb-kpi-label,
 :root[data-theme='dark'] .lb-kpi-sub { color: var(--muted); }
 
