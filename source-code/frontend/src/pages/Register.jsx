@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from '../components/Icons';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ export default function Register() {
 
   return (
     <div className="auth-wrap">
+      <ThemeToggle floating />
       <div className="auth-brand"><Logo /> MiniLib</div>
       <div className="card auth-card">
         <h2>Đăng ký tài khoản</h2>

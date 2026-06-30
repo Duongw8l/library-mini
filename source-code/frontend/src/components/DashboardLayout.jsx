@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loansApi } from '../api/services';
+import ThemeToggle from './ThemeToggle';
 import {
   Logo, IconHome, IconBook, IconUsers, IconSwap, IconChart, IconGear, IconSearch, IconBell, IconMenu, IconClose,
 } from './Icons';
@@ -102,6 +103,7 @@ export default function DashboardLayout() {
           </form>
           <div className="topbar-right">
             <Clock />
+            <ThemeToggle />
             <div className="bell">
               <IconBell />
               {alerts > 0 && <span className="bell-badge">{alerts}</span>}

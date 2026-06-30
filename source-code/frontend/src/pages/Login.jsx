@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from '../components/Icons';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login() {
   const { login } = useAuth();
@@ -27,6 +28,7 @@ export default function Login() {
 
   return (
     <div className="auth-wrap">
+      <ThemeToggle floating />
       <div className="auth-brand"><Logo /> MiniLib</div>
       <div className="card auth-card">
         <h2>Đăng nhập</h2>
