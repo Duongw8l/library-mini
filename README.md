@@ -95,6 +95,12 @@ Kết quả kiểm thử tổng hợp: `testing/test-report.pdf` · Lỗi: `test
 - **Thủ thư:** quản lý đầu sách, duyệt/từ chối mượn, xác nhận trả, xử lý quá hạn, cập nhật số bản.
 - **Quản trị viên:** quản lý tài khoản & phân quyền, danh mục, xem thống kê, xuất báo cáo CSV.
 
+## 🎨 Giao diện
+
+- **Chế độ Sáng / Tối (Light / Dark):** nút ☀/☾ trên thanh trên cùng và trang đăng nhập.
+  Lựa chọn được lưu vào `localStorage`; lần đầu tự nhận theo cài đặt hệ điều hành.
+- **Responsive:** sidebar dạng drawer (nút ☰) và bảng cuộn ngang trên màn hình nhỏ.
+
 ## 📐 Quy tắc nghiệp vụ chính
 
 Mượn tối đa 5 cuốn · hạn 14 ngày · gia hạn tối đa 2 lần (7 ngày/lần) ·
